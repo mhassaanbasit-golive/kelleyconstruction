@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { ThumbsDown, ThumbsUp } from 'lucide-react';
 
-export default function Survey({ visitor, onCompleteSurvey }) {
+export default function Survey({ visitor, onSurveyRecord, onCompleteSurvey }) {
   const [first, setFirst] = useState(null);
   const [resolved, setResolved] = useState(null);
   const [rating, setRating] = useState('');
@@ -27,6 +27,8 @@ export default function Survey({ visitor, onCompleteSurvey }) {
     const trimmedComment = comment.trim();
     const firstBool = first === true;
     const resolvedBool = resolved === true;
+
+    onSurveyRecord?.({ rating, comment: trimmedComment });
 
     try {
       if (!String(visitor?.company_website || '').trim()) {

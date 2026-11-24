@@ -13,7 +13,7 @@
   --ash: rgba(255, 255, 255, 0.78);
   --ash-muted: #98A0A8;
   --slate: #3A4149;
-  --ghost: #3A424B;
+  --ghost: #6D7782;
   --ghost-light: #D9DBD8;
   --error: #B91C1C;
 
@@ -238,9 +238,16 @@ h3,
   color: var(--white);
 }
 
+.section-dark-steel {
+  position: relative;
+  background-color: var(--steel);
+  color: var(--white);
+}
+
 /* 4% film grain texture on dark surfaces */
 .section-dark-ink::after,
 .section-dark-navy::after,
+.section-dark-steel::after,
 .site-footer::after {
   content: "";
   position: absolute;

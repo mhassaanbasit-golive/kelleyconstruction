@@ -51,11 +51,11 @@ async function runFakeStream({ messages, onEvent, signal }) {
   const lower = lastUser.toLowerCase();
 
   onEvent('status', { text: 'Understanding your question' });
-  await sleepWithAbort(220, signal);
+  await sleepWithAbort(100, signal);
   onEvent('status_done', {});
 
   onEvent('status', { text: 'Checking Wendell Kelley Construction details' });
-  await sleepWithAbort(260, signal);
+  await sleepWithAbort(120, signal);
   onEvent('status_done', {});
 
   let replyText =
@@ -74,7 +74,7 @@ async function runFakeStream({ messages, onEvent, signal }) {
 
   const words = replyText.split(/(?<=\s)/);
   for (const w of words) {
-    await sleepWithAbort(50, signal);
+    await sleepWithAbort(20, signal);
     onEvent('token', { text: w });
   }
 

@@ -654,8 +654,8 @@ export default function Motion() {
             const tl = gsap.timeline({
               scrollTrigger: {
                 trigger: heading,
-                start: 'top 78%',
-                end: 'bottom 45%',
+                start: 'top 82%',
+                end: 'center 55%',
                 scrub: 1,
               },
             });

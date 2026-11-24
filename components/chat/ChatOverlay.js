@@ -221,7 +221,13 @@ export default function ChatOverlay({ openSignal, onCloseNotify }) {
 
     if (current.screen === 'survey') {
       sendLead('close');
-      dispatch({ type: 'CLOSE' });
+      if (idleTimerRef.current) {
+        clearTimeout(idleTimerRef.current);
+        idleTimerRef.current = null;
+      }
+      clearChatSessionStorage();
+      leadTrackerRef.current.reset();
+      dispatch({ type: 'RESET' });
     }
   }, [sendLead]);
 
@@ -295,6 +301,13 @@ export default function ChatOverlay({ openSignal, onCloseNotify }) {
       dispatch({ type: 'SET_LEAD', visitor: visitorData });
       sendLead('signin', { visitor: visitorData });
       dispatch({ type: 'SET_SCREEN', screen: 'chat' });
+    },
+    [sendLead]
+  );
+
+  const handleRecordSurvey = useCallback(
+    ({ rating, comment }) => {
+      sendLead('close', { rating, comment });
     },
     [sendLead]
   );
@@ -388,6 +401,7 @@ export default function ChatOverlay({ openSignal, onCloseNotify }) {
         {state.screen === 'survey' ? (
           <Survey
             visitor={state.visitor}
+            onSurveyRecord={handleRecordSurvey}
             onCompleteSurvey={handleCompleteSurvey}
           />
         ) : null}

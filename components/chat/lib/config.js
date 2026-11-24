@@ -1,4 +1,4 @@
-export const GETGOLIVE_URL = 'https://getgolive.com'; // EDIT: correct link
+export const GETGOLIVE_URL = 'https://getgolive.io';
 
 export const CHAT_CONFIG = Object.freeze({
   companyName: 'Wendell Kelley Construction, Inc.',

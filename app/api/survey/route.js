@@ -143,7 +143,7 @@ export async function POST(req) {
   const resendKey = String(process.env.RESEND_API_KEY || '').trim();
   if (!resendKey) {
     console.warn('[WK survey] RESEND_API_KEY is not configured; skipping email send.');
-    return NextResponse.json({ ok: true });
+    return NextResponse.json({ ok: true, emailSent: false });
   }
 
   const fromEmail = String(process.env.RESEND_FROM || '').trim() || 'WK Construction Inc. <onboarding@resend.dev>';
@@ -172,6 +172,7 @@ export async function POST(req) {
     payload.reply_to = cleanHeaderText(email);
   }
 
+  let emailSent = false;
   try {
     const resp = await fetch('https://api.resend.com/emails', {
       method: 'POST',
@@ -185,10 +186,12 @@ export async function POST(req) {
     if (!resp.ok) {
       const errText = await resp.text().catch(() => '');
       console.warn('[WK survey] Resend API returned non-OK:', resp.status, errText);
+    } else {
+      emailSent = true;
     }
   } catch (err) {
     console.warn('[WK survey] Failed to send email via Resend:', err?.message || err);
   }
 
-  return NextResponse.json({ ok: true });
+  return NextResponse.json({ ok: true, emailSent });
 }

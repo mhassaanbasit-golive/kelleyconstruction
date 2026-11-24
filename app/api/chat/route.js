@@ -1,6 +1,10 @@
 import { GoogleGenAI } from '@google/genai';
 import { NextResponse } from 'next/server';
-import { KNOWLEDGE } from '../../../lib/knowledge.js';
+import {
+  buildModelRequestConfig,
+  buildSystemInstruction,
+  getModelCascade,
+} from '../../../lib/chat-helpers.js';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -28,25 +32,6 @@ function checkRateLimit(req) {
   }
   current.count += 1;
   return true;
-}
-
-function getModelCascade() {
-  const candidates = [
-    process.env.GEMINI_MODEL,
-    'gemini-3.5-flash',
-    'gemini-flash-lite-latest',
-    'gemini-3-flash-preview',
-    'gemini-2.5-flash',
-  ];
-  const seen = new Set();
-  const list = [];
-  for (const raw of candidates) {
-    const m = String(raw || '').trim();
-    if (!m || seen.has(m)) continue;
-    seen.add(m);
-    list.push(m);
-  }
-  return list;
 }
 
 function normalizeMessages(rawMessages) {
@@ -174,31 +159,6 @@ function getTopicSuggestions(normalizedContents, pageUrl = '/') {
   ];
 }
 
-function buildSystemInstruction(page, visitor) {
-  const pageUrl = String(page?.url || '/').trim() || '/';
-  const pageTitle = String(page?.title || 'WK Construction Inc.').trim() || 'WK Construction Inc.';
-  const visitorFirstName = String(visitor?.name || '').trim().split(/\s+/)[0] || '';
-
-  return [
-    'You are an experienced, sharp-minded project coordinator at Wendell Kelley Construction, Inc. in Cleveland, TX.',
-    'Talk like a real, thoughtful person having a natural conversation — never like a template, FAQ dump, or brochure.',
-    'Communication rules:',
-    '1. Be as short and to the point as possible. Aim for 1 to 2 crisp sentences (under 35 words). Never ramble, pad, or repeat yourself.',
-    '2. Never repeat phone numbers, addresses, hours, counties, or facts you already mentioned earlier in this conversation.',
-    '3. Think intelligently about what the visitor is actually asking and connect the dots naturally instead of listing everything from the company reference.',
-    '4. Answer the exact question first, then add at most one practical follow-up question or next step when it genuinely helps move the project forward.',
-    '5. Plain text only — no markdown, no asterisks, no bullet lists. Write phone numbers and email as plain text.',
-    '6. Never invent prices, timelines, square-foot rates, or services outside the facts below. If asked for pricing or a quote, briefly ask what they are building, rough size, county, and whether the land is cleared (and only share (281) 592-3792 if not already mentioned).',
-    '7. If something is outside the company facts, say plainly that you are not sure and suggest calling (281) 592-3792.',
-    '8. Never mention the lien, staff names, or the Bartlett family.',
-    visitorFirstName ? `Visitor first name: ${visitorFirstName}` : '',
-    `Current page: ${pageTitle} (${pageUrl})`,
-    `Company reference:\n${JSON.stringify(KNOWLEDGE)}`,
-  ]
-    .filter(Boolean)
-    .join('\n');
-}
-
 function buildFallbackAnswer() {
   return 'I hit a quick connection snag — please call (281) 592-3792 or (281) 593-5422, or email wendellkelley@gmail.com so our team can help right away.';
 }
@@ -216,7 +176,7 @@ function createSseStreamResponse({
   pageUrl,
   hotLead,
   fallbackText = null,
-  streamSource = null,
+  streamRunner = null,
 }) {
   const encoder = new TextEncoder();
   const action = { label: 'Call (281) 592-3792', href: 'tel:+12815923792' };
@@ -232,11 +192,11 @@ function createSseStreamResponse({
         send('status', { text: 'Understanding your question' });
         send('status_done', {});
         send('status', { text: 'Checking Wendell Kelley Construction details' });
-        send('status_done', {});
 
         if (fallbackText) {
+          send('status_done', {});
           send('token', { text: stripMarkdownToken(fallbackText) });
-        } else if (streamSource) {
+        } else if (streamRunner) {
           let linkCarry = '';
           let sentAny = false;
 
@@ -255,33 +215,34 @@ function createSseStreamResponse({
             }
             const cleaned = stripMarkdownToken(ready);
             if (cleaned) {
+              if (!sentAny) {
+                send('status_done', {});
+              }
               sentAny = true;
               send('token', { text: cleaned });
             }
           };
 
-          if (streamSource.firstText) {
-            emitClean(streamSource.firstText);
-          }
-
-          try {
-            for await (const chunk of streamSource.iterator) {
-              const chunkText = chunk?.text;
-              if (chunkText) {
-                emitClean(chunkText);
-              }
-            }
-          } catch (streamErr) {
-            if (!sentAny) {
-              console.warn('[WK chat] stream interrupted before output:', streamErr?.message || streamErr);
-              send('token', { text: stripMarkdownToken(buildFallbackAnswer()) });
-            }
-            // If tokens were already sent, treat it as finished
-          }
+          const outcome = await streamRunner({
+            emitClean,
+            hasSentAny: () => sentAny,
+          });
 
           if (linkCarry) {
             const flushed = stripMarkdownToken(linkCarry);
-            if (flushed) send('token', { text: flushed });
+            if (flushed) {
+              if (!sentAny) send('status_done', {});
+              sentAny = true;
+              send('token', { text: flushed });
+            }
+          }
+
+          if (!sentAny) {
+            send('status_done', {});
+            const msg = outcome?.sawRateLimit
+              ? 'The assistant is busy right now. Please call (281) 592-3792.'
+              : buildFallbackAnswer();
+            send('token', { text: stripMarkdownToken(msg) });
           }
         }
 
@@ -292,6 +253,7 @@ function createSseStreamResponse({
       } catch (err) {
         console.warn('[WK chat] SSE stream error:', err?.message || err);
         try {
+          send('status_done', {});
           send('token', { text: stripMarkdownToken(buildFallbackAnswer()) });
           send('action', action);
           send('suggestions', suggestions);
@@ -299,7 +261,9 @@ function createSseStreamResponse({
           send('done', {});
         } catch {}
       } finally {
-        controller.close();
+        try {
+          controller.close();
+        } catch {}
       }
     },
   });
@@ -378,72 +342,50 @@ export async function POST(req) {
   const models = getModelCascade();
   const systemInstruction = buildSystemInstruction(page, visitor);
 
-  let selectedStream = null;
-  let lastError = null;
-  let sawRateLimit = false;
-
-  for (const model of models) {
-    try {
-      const responseStream = await ai.models.generateContentStream({
-        model,
-        contents: normalizedContents,
-        config: {
-          systemInstruction,
-          temperature: 0.55,
-        },
-      });
-
-      const iterator = responseStream[Symbol.asyncIterator]();
-      let firstText = '';
-      while (true) {
-        const next = await iterator.next();
-        if (next.done) break;
-        const t = next.value?.text;
-        if (t) {
-          firstText = t;
-          break;
-        }
-      }
-
-      if (!firstText) {
-        throw new Error(`Empty response from model ${model}`);
-      }
-
-      selectedStream = { firstText, iterator };
-      break;
-    } catch (err) {
-      lastError = err;
-      if (isRateLimitError(err)) {
-        sawRateLimit = true;
-      }
-      console.warn(`[WK chat] model ${model} failed before token:`, err?.message || err);
-    }
-  }
-
-  if (selectedStream) {
-    return createSseStreamResponse({
-      normalizedContents,
-      pageUrl: page.url,
-      hotLead,
-      streamSource: selectedStream,
-    });
-  }
-
-  if (sawRateLimit) {
-    return NextResponse.json(
-      { error: 'The assistant is busy right now. Please try again in a moment or call (281) 592-3792.' },
-      { status: 429, headers: { 'Retry-After': '30' } }
-    );
-  }
-
-  if (lastError) {
-    console.warn('[WK chat] all models failed, streaming fallback:', lastError?.message || lastError);
-  }
-
+  // Open SSE stream immediately so live status steps render right away while Gemini connects
   return createSseStreamResponse({
     normalizedContents,
     pageUrl: page.url,
     hotLead,
-    fallbackText: buildFallbackAnswer(),
+    streamRunner: async ({ emitClean, hasSentAny }) => {
+      let sawRateLimit = false;
+      let lastError = null;
+
+      for (const model of models) {
+        try {
+          const responseStream = await ai.models.generateContentStream({
+            model,
+            contents: normalizedContents,
+            config: buildModelRequestConfig(model, systemInstruction),
+          });
+
+          for await (const chunk of responseStream) {
+            const chunkText = chunk?.text;
+            if (chunkText) {
+              emitClean(chunkText);
+            }
+          }
+
+          if (hasSentAny()) {
+            return { ok: true, sawRateLimit: false };
+          }
+          throw new Error(`Empty response from model ${model}`);
+        } catch (err) {
+          lastError = err;
+          if (isRateLimitError(err)) {
+            sawRateLimit = true;
+          }
+          console.warn(`[WK chat] model ${model} failed:`, err?.message || err);
+          if (hasSentAny()) {
+            return { ok: true, sawRateLimit: false };
+          }
+        }
+      }
+
+      if (lastError) {
+        console.warn('[WK chat] all models failed, using fallback:', lastError?.message || lastError);
+      }
+      return { ok: false, sawRateLimit };
+    },
   });
 }

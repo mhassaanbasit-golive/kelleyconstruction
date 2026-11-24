@@ -400,7 +400,7 @@ export default function RootLayout({ children }) {
               <span>&copy; 2026 {BUSINESS.legalName} All rights reserved.</span>
               {/* EDIT: correct link */}
               <a
-                href="https://getgolive.com"
+                href="https://getgolive.io"
                 target="_blank"
                 rel="noopener"
                 className="footer-credit-link"
