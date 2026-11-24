@@ -84,16 +84,6 @@ export default function ChatWidget() {
     };
   }, [siteReady]);
 
-  // Subtle icon pulse when mobile sticky bar moves in/out during scroll
-  useEffect(() => {
-    if (!siteReady || !shouldAnimateIcon()) return undefined;
-    iconRef.current?.startAnimation?.();
-    const stopT = setTimeout(() => {
-      iconRef.current?.stopAnimation?.();
-    }, 1100);
-    return () => clearTimeout(stopT);
-  }, [stickyBarVisible, siteReady]);
-
   // Monitor cookie banner, exit offer, mobile menu, lightbox, and mobile sticky bar classes
   useEffect(() => {
     const cookieBanner = document.getElementById('cookie-banner');

@@ -2947,6 +2947,7 @@ html.js [data-image-reveal] img {
 .wk-chat-overlay {
   position: fixed;
   inset: 0;
+  height: 100vh;
   height: 100dvh;
   width: 100%;
   padding-top: env(safe-area-inset-top, 0px);
@@ -2958,6 +2959,11 @@ html.js [data-image-reveal] img {
   visibility: hidden;
   pointer-events: none;
   transition: opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1), visibility 0.8s;
+}
+
+.wk-chat-overlay button,
+.wk-chat-widget-anchor button {
+  touch-action: manipulation;
 }
 
 .wk-chat-overlay.is-open {
@@ -3183,8 +3189,10 @@ html.js [data-image-reveal] img {
 }
 
 .wk-chat-form-scroll {
+  height: calc(100vh - 64px - 48px);
   height: calc(100dvh - 64px - 48px);
   overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
   overscroll-behavior: contain;
   padding: 24px 20px;
   display: flex;
@@ -3259,7 +3267,7 @@ html.js [data-image-reveal] img {
   border-radius: 0;
   background-color: transparent;
   color: var(--ink);
-  font-size: 15px;
+  font-size: 16px;
   outline: none;
   transition: border-color 0.4s cubic-bezier(0.16, 1, 0.3, 1);
 }
@@ -3322,6 +3330,7 @@ html.js [data-image-reveal] img {
   flex: 1;
   min-height: 0;
   overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
   overscroll-behavior: contain;
   padding: 16px;
 }
@@ -3615,7 +3624,7 @@ html.js [data-image-reveal] img {
   border: 0;
   background: transparent;
   color: var(--ink);
-  font-size: 15px;
+  font-size: 16px;
   line-height: 1.4;
   resize: none;
   outline: none;
@@ -3676,8 +3685,10 @@ html.js [data-image-reveal] img {
 
 /* Survey */
 .wk-chat-survey-scroll {
+  height: calc(100vh - 64px - 48px);
   height: calc(100dvh - 64px - 48px);
   overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
   overscroll-behavior: contain;
   padding: 24px 20px;
   display: flex;

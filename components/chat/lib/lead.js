@@ -117,7 +117,7 @@ export async function postLeadWithRetries(payload, maxRetries = 3) {
         try {
           const data = await resp.json();
           if (data && data.emailSent === false) {
-            console.warn('[WK chat] Lead saved without email (RESEND_API_KEY missing or rejected).');
+            console.warn('[WK chat] Lead saved without email (SMTP or RESEND credentials missing or rejected).');
           }
         } catch {}
         return true;

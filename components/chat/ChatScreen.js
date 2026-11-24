@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
+import { memo, useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import { ArrowUp, ArrowUpRight, Check, Mic, MicOff, Square } from 'lucide-react';
 import { CHAT_CONFIG } from './lib/config.js';
 import { extractFirstName, isAllowedActionHref, tokenizeMessageText } from './lib/format.js';
@@ -30,7 +30,7 @@ function getVoiceServerSnapshot() {
   return false;
 }
 
-function MessageContent({ text }) {
+const MessageContent = memo(function MessageContent({ text }) {
   const tokens = tokenizeMessageText(text);
   return (
     <>
@@ -46,7 +46,7 @@ function MessageContent({ text }) {
       })}
     </>
   );
-}
+});
 
 export default function ChatScreen({
   visitor,
@@ -255,11 +255,34 @@ export default function ChatScreen({
     let botText = '';
     let botAction = null;
     let firstTokenSeen = false;
+    let rafId = null;
 
     const updateBotMessage = (updater) => {
       onMessagesChange((prev) =>
         prev.map((m) => (m.id === botMsgId ? updater(m) : m))
       );
+    };
+
+    const flushTokenFrame = () => {
+      if (rafId !== null) {
+        cancelAnimationFrame(rafId);
+        rafId = null;
+      }
+      const snapshot = botText;
+      updateBotMessage((m) => (m.text === snapshot ? m : { ...m, text: snapshot }));
+    };
+
+    const scheduleTokenFrame = () => {
+      if (rafId !== null) return;
+      if (typeof requestAnimationFrame === 'undefined') {
+        flushTokenFrame();
+        return;
+      }
+      rafId = requestAnimationFrame(() => {
+        rafId = null;
+        const snapshot = botText;
+        updateBotMessage((m) => (m.text === snapshot ? m : { ...m, text: snapshot }));
+      });
     };
 
     try {
@@ -298,8 +321,7 @@ export default function ChatScreen({
               setLiveSteps([]);
             }
             botText += chunk;
-            onActivity();
-            updateBotMessage((m) => ({ ...m, text: botText }));
+            scheduleTokenFrame();
           } else if (eventName === 'action' && data?.label && data?.href) {
             botAction = { label: String(data.label), href: String(data.href) };
             updateBotMessage((m) => ({ ...m, action: botAction }));
@@ -310,6 +332,8 @@ export default function ChatScreen({
           }
         },
       });
+
+      flushTokenFrame();
 
       if (!outcome.ok && !firstTokenSeen) {
         setHasFirstToken(true);
@@ -323,6 +347,7 @@ export default function ChatScreen({
         setLiveSteps([]);
       }
     } catch (err) {
+      flushTokenFrame();
       if (err?.name === 'AbortError') {
         // User stopped stream: keep tokens already shown with no error
         if (!firstTokenSeen) {
@@ -335,6 +360,10 @@ export default function ChatScreen({
         }));
       }
     } finally {
+      if (rafId !== null) {
+        cancelAnimationFrame(rafId);
+        rafId = null;
+      }
       abortRef.current = null;
       setIsStreaming(false);
       setLiveSteps([]);
@@ -492,7 +521,6 @@ export default function ChatScreen({
               ref={textareaRef}
               rows={1}
               maxLength={1000}
-              disabled={isStreaming}
               placeholder="Ask about metal buildings, land clearing, or quotes..."
               aria-label="Message"
               className="wk-chat-textarea"
@@ -518,6 +546,7 @@ export default function ChatScreen({
               <button
                 type="button"
                 className="wk-chat-send-btn is-stop"
+                onPointerDown={(e) => e.preventDefault()}
                 onClick={handleStopStream}
                 aria-label="Stop response"
               >
@@ -527,6 +556,7 @@ export default function ChatScreen({
               <button
                 type="button"
                 className={`wk-chat-send-btn ${inputText.trim() ? 'is-ready' : ''}`}
+                onPointerDown={(e) => e.preventDefault()}
                 onClick={() => sendMessage(inputText)}
                 disabled={!inputText.trim()}
                 aria-label="Send message"

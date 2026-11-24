@@ -8,10 +8,47 @@ import {
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
+export const maxDuration = 30;
 
 const RATE_WINDOW_MS = 60_000;
-const RATE_LIMIT_MAX = 25;
+const RATE_LIMIT_MAX = 30;
+const FIRST_CHUNK_TIMEOUT_MS = 7_500;
+const MODEL_COOLDOWN_MS = 300_000;
 const rateBuckets = new Map();
+const modelCooldowns = new Map();
+let cachedAi = null;
+let cachedAiKey = '';
+
+function getAiClient(apiKey) {
+  if (cachedAi && cachedAiKey === apiKey) {
+    return cachedAi;
+  }
+  cachedAi = new GoogleGenAI({
+    apiKey,
+    httpOptions: {
+      headers: {
+        'User-Agent': 'aistudio-build',
+      },
+    },
+  });
+  cachedAiKey = apiKey;
+  return cachedAi;
+}
+
+function orderHealthyModels(models) {
+  const now = Date.now();
+  const healthy = [];
+  const cooled = [];
+  for (const m of models) {
+    const until = modelCooldowns.get(m) || 0;
+    if (until > now) {
+      cooled.push(m);
+    } else {
+      healthy.push(m);
+    }
+  }
+  return [...healthy, ...cooled];
+}
 
 function checkRateLimit(req) {
   const fwd = req.headers.get('x-forwarded-for') || '';
@@ -168,6 +205,8 @@ function makeSseHeaders() {
     'Content-Type': 'text/event-stream; charset=utf-8',
     'Cache-Control': 'no-cache, no-transform',
     Connection: 'keep-alive',
+    'X-Accel-Buffering': 'no',
+    'X-Content-Type-Options': 'nosniff',
   };
 }
 
@@ -330,16 +369,8 @@ export async function POST(req) {
     });
   }
 
-  const ai = new GoogleGenAI({
-    apiKey,
-    httpOptions: {
-      headers: {
-        'User-Agent': 'aistudio-build',
-      },
-    },
-  });
-
-  const models = getModelCascade();
+  const ai = getAiClient(apiKey);
+  const models = orderHealthyModels(getModelCascade());
   const systemInstruction = buildSystemInstruction(page, visitor);
 
   // Open SSE stream immediately so live status steps render right away while Gemini connects
@@ -352,28 +383,69 @@ export async function POST(req) {
       let lastError = null;
 
       for (const model of models) {
+        let firstChunkTimer = null;
         try {
-          const responseStream = await ai.models.generateContentStream({
-            model,
-            contents: normalizedContents,
-            config: buildModelRequestConfig(model, systemInstruction),
-          });
+          const responseStream = await Promise.race([
+            ai.models.generateContentStream({
+              model,
+              contents: normalizedContents,
+              config: buildModelRequestConfig(model, systemInstruction),
+            }),
+            new Promise((_, reject) => {
+              firstChunkTimer = setTimeout(() => {
+                reject(new Error(`Model ${model} timed out opening stream`));
+              }, FIRST_CHUNK_TIMEOUT_MS);
+            }),
+          ]);
+          if (firstChunkTimer) {
+            clearTimeout(firstChunkTimer);
+            firstChunkTimer = null;
+          }
 
-          for await (const chunk of responseStream) {
-            const chunkText = chunk?.text;
+          const iterator = responseStream[Symbol.asyncIterator]();
+          while (true) {
+            let nextStep;
+            if (!hasSentAny()) {
+              let chunkTimer = null;
+              try {
+                nextStep = await Promise.race([
+                  iterator.next(),
+                  new Promise((_, reject) => {
+                    chunkTimer = setTimeout(() => {
+                      reject(new Error(`Model ${model} timed out before first token`));
+                    }, FIRST_CHUNK_TIMEOUT_MS);
+                  }),
+                ]);
+              } finally {
+                if (chunkTimer) clearTimeout(chunkTimer);
+              }
+            } else {
+              nextStep = await iterator.next();
+            }
+
+            if (nextStep.done) break;
+            const chunkText = nextStep.value?.text;
             if (chunkText) {
               emitClean(chunkText);
             }
           }
 
           if (hasSentAny()) {
+            modelCooldowns.delete(model);
             return { ok: true, sawRateLimit: false };
           }
           throw new Error(`Empty response from model ${model}`);
         } catch (err) {
+          if (firstChunkTimer) {
+            clearTimeout(firstChunkTimer);
+            firstChunkTimer = null;
+          }
           lastError = err;
           if (isRateLimitError(err)) {
             sawRateLimit = true;
+          } else {
+            // Put stalled/404/errored models behind healthy models for 5 minutes
+            modelCooldowns.set(model, Date.now() + MODEL_COOLDOWN_MS);
           }
           console.warn(`[WK chat] model ${model} failed:`, err?.message || err);
           if (hasSentAny()) {

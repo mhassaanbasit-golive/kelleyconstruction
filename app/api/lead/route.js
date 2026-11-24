@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { cleanHeaderText, sendNotificationEmail } from '../../../lib/mailer.js';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -12,11 +13,6 @@ function escapeHtml(value) {
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#39;');
-}
-
-function cleanHeaderText(value, fallback = '') {
-  const cleaned = String(value ?? '').replace(/[\r\n]+/g, ' ').trim();
-  return cleaned || fallback;
 }
 
 function formatChicagoTime(date = new Date()) {
@@ -296,14 +292,6 @@ export async function POST(req) {
   }
   leadDedupe.set(dedupeKey, now);
 
-  const resendKey = String(process.env.RESEND_API_KEY || '').trim();
-  if (!resendKey) {
-    console.warn('[WK lead] RESEND_API_KEY is not configured; skipping email send.');
-    return NextResponse.json({ ok: true, emailSent: false });
-  }
-
-  const fromEmail = String(process.env.RESEND_FROM || '').trim() || 'WK Construction Inc. <onboarding@resend.dev>';
-  const toEmail = String(process.env.NOTIFICATION_EMAIL || '').trim() || 'hassaanbasitali@gmail.com';
   const subjectName = cleanHeaderText(name, 'Website visitor');
   const subjectReason = cleanHeaderText(trigger, 'Website inquiry');
   const chicagoTime = formatChicagoTime(new Date());
@@ -321,39 +309,16 @@ export async function POST(req) {
     messages,
   });
 
-  const payload = {
-    from: fromEmail,
-    to: [toEmail],
-    subject: isSignIn
-      ? `New chatbot sign-in lead: ${subjectName}`
-      : `New website lead: ${subjectName} (${subjectReason})`,
+  const subject = isSignIn
+    ? `New chatbot sign-in lead: ${subjectName}`
+    : `New website lead: ${subjectName} (${subjectReason})`;
+
+  const { emailSent } = await sendNotificationEmail({
+    subject,
     html,
-  };
-
-  if (email && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-    payload.reply_to = cleanHeaderText(email);
-  }
-
-  let emailSent = false;
-  try {
-    const resp = await fetch('https://api.resend.com/emails', {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${resendKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(payload),
-    });
-
-    if (!resp.ok) {
-      const errText = await resp.text().catch(() => '');
-      console.warn('[WK lead] Resend API returned non-OK:', resp.status, errText);
-    } else {
-      emailSent = true;
-    }
-  } catch (err) {
-    console.warn('[WK lead] Failed to send email via Resend:', err?.message || err);
-  }
+    replyTo: email,
+    logPrefix: '[WK lead]',
+  });
 
   return NextResponse.json({ ok: true, emailSent });
 }

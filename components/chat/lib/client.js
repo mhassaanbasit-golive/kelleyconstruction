@@ -92,6 +92,109 @@ async function runFakeStream({ messages, onEvent, signal }) {
   onEvent('done', {});
 }
 
+export function parseSseBlocks(rawBuffer, flush = false) {
+  const normalized = String(rawBuffer || '').replace(/\r\n/g, '\n');
+  const events = [];
+  let cursor = 0;
+
+  while (true) {
+    const sepIndex = normalized.indexOf('\n\n', cursor);
+    if (sepIndex === -1) break;
+    const block = normalized.slice(cursor, sepIndex);
+    cursor = sepIndex + 2;
+    if (block.trim()) {
+      const parsed = parseSingleSseBlock(block);
+      if (parsed) events.push(parsed);
+    }
+  }
+
+  let rest = normalized.slice(cursor);
+  if (flush && rest.trim()) {
+    const parsed = parseSingleSseBlock(rest);
+    if (parsed) events.push(parsed);
+    rest = '';
+  }
+
+  return { events, rest };
+}
+
+function parseSingleSseBlock(block) {
+  let eventName = 'message';
+  const dataLines = [];
+
+  for (const line of block.split('\n')) {
+    if (line.startsWith('event:')) {
+      eventName = line.slice(6).trim();
+    } else if (line.startsWith('data:')) {
+      dataLines.push(line.slice(5).trim());
+    }
+  }
+
+  if (dataLines.length === 0) return null;
+  const rawData = dataLines.join('\n');
+  try {
+    return { eventName, data: JSON.parse(rawData) };
+  } catch {
+    return { eventName, data: { text: rawData } };
+  }
+}
+
+async function openChatStreamWithRetry(bodyJson, signal) {
+  const maxAttempts = 2;
+  let lastError = null;
+  let lastResponse = null;
+
+  for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+    if (signal?.aborted) {
+      throw new DOMException('Aborted', 'AbortError');
+    }
+
+    const connectController = new AbortController();
+    const onExternalAbort = () => connectController.abort();
+    signal?.addEventListener('abort', onExternalAbort, { once: true });
+
+    const connectTimer = setTimeout(() => {
+      connectController.abort();
+    }, 12_000);
+
+    try {
+      const resp = await fetch('/api/chat/', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        cache: 'no-store',
+        body: bodyJson,
+        signal: connectController.signal,
+      });
+      clearTimeout(connectTimer);
+      signal?.removeEventListener('abort', onExternalAbort);
+
+      if (resp.status === 429 || (resp.ok && resp.body)) {
+        return resp;
+      }
+
+      lastResponse = resp;
+      if (resp.status < 500 || attempt === maxAttempts) {
+        return resp;
+      }
+    } catch (err) {
+      clearTimeout(connectTimer);
+      signal?.removeEventListener('abort', onExternalAbort);
+      if (signal?.aborted) {
+        throw err;
+      }
+      lastError = err;
+      if (attempt === maxAttempts) {
+        throw lastError;
+      }
+    }
+
+    await sleepWithAbort(350, signal);
+  }
+
+  if (lastResponse) return lastResponse;
+  throw lastError || new Error('Connection failed');
+}
+
 export async function streamChat({
   messages,
   page,
@@ -112,24 +215,21 @@ export async function streamChat({
     return { ok: true };
   }
 
-  const resp = await fetch('/api/chat/', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      messages: recentMessages,
-      page: {
-        url: page?.url || '/',
-        title: page?.title || 'WK Construction Inc.',
-      },
-      visitor: {
-        name: visitor?.name || '',
-        email: visitor?.email || '',
-        phone: visitor?.phone || '',
-      },
-      company_website: companyWebsite || '',
-    }),
-    signal,
+  const bodyJson = JSON.stringify({
+    messages: recentMessages,
+    page: {
+      url: page?.url || '/',
+      title: page?.title || 'WK Construction Inc.',
+    },
+    visitor: {
+      name: visitor?.name || '',
+      email: visitor?.email || '',
+      phone: visitor?.phone || '',
+    },
+    company_website: companyWebsite || '',
   });
+
+  const resp = await openChatStreamWithRetry(bodyJson, signal);
 
   if (resp.status === 429) {
     return {
@@ -158,7 +258,7 @@ export async function streamChat({
     chunkTimer = setTimeout(() => {
       timedOut = true;
       reader.cancel().catch(() => {});
-    }, 25_000);
+    }, 16_000);
   };
 
   try {
@@ -169,34 +269,17 @@ export async function streamChat({
       resetChunkTimer();
 
       buffer += decoder.decode(value, { stream: true });
-      buffer = buffer.replace(/\r\n/g, '\n');
-
-      let sepIndex;
-      while ((sepIndex = buffer.indexOf('\n\n')) !== -1) {
-        const block = buffer.slice(0, sepIndex);
-        buffer = buffer.slice(sepIndex + 2);
-        if (!block.trim()) continue;
-
-        let eventName = 'message';
-        const dataLines = [];
-
-        for (const line of block.split('\n')) {
-          if (line.startsWith('event:')) {
-            eventName = line.slice(6).trim();
-          } else if (line.startsWith('data:')) {
-            dataLines.push(line.slice(5).trim());
-          }
-        }
-
-        if (dataLines.length === 0) continue;
-        let parsed = null;
-        try {
-          parsed = JSON.parse(dataLines.join('\n'));
-        } catch {
-          parsed = { text: dataLines.join('\n') };
-        }
-        onEvent(eventName, parsed);
+      const { events, rest } = parseSseBlocks(buffer, false);
+      buffer = rest;
+      for (const evt of events) {
+        onEvent(evt.eventName, evt.data);
       }
+    }
+
+    buffer += decoder.decode();
+    const { events: trailingEvents } = parseSseBlocks(buffer, true);
+    for (const evt of trailingEvents) {
+      onEvent(evt.eventName, evt.data);
     }
 
     if (timedOut) {

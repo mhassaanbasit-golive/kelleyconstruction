@@ -93,6 +93,8 @@ export default function ChatOverlay({ openSignal, onCloseNotify }) {
   const idleTimerRef = useRef(null);
   const stateRef = useRef(state);
   const wasOpenRef = useRef(false);
+  const overlayRef = useRef(null);
+  const persistTimerRef = useRef(null);
 
   useEffect(() => {
     stateRef.current = state;
@@ -105,11 +107,21 @@ export default function ChatOverlay({ openSignal, onCloseNotify }) {
     }
   }, [openSignal]);
 
-  // Persist conversation transcript in sessionStorage
+  // Debounce conversation transcript persistence so streaming tokens never thrash sessionStorage
   useEffect(() => {
-    if (state.messages.length > 0) {
+    if (state.messages.length === 0) return undefined;
+    if (persistTimerRef.current) clearTimeout(persistTimerRef.current);
+    persistTimerRef.current = setTimeout(() => {
       safeSession.setJson('chat_memory', state.messages);
-    }
+      persistTimerRef.current = null;
+    }, 450);
+
+    return () => {
+      if (persistTimerRef.current) {
+        clearTimeout(persistTimerRef.current);
+        persistTimerRef.current = null;
+      }
+    };
   }, [state.messages]);
 
   const sendLead = useCallback((reason, overrides = {}) => {
@@ -245,6 +257,23 @@ export default function ChatOverlay({ openSignal, onCloseNotify }) {
         window.__lenis?.stop?.();
       } catch {}
 
+      const overlayEl = overlayRef.current;
+      const vv = window.visualViewport;
+      const syncViewport = () => {
+        if (!overlayEl || !vv) return;
+        const nextHeight = Math.round(vv.height);
+        if (nextHeight > 200) {
+          overlayEl.style.height = `${nextHeight}px`;
+          overlayEl.style.transform = vv.offsetTop ? `translate3d(0, ${Math.round(vv.offsetTop)}px, 0)` : '';
+        }
+      };
+
+      if (vv) {
+        syncViewport();
+        vv.addEventListener('resize', syncViewport);
+        vv.addEventListener('scroll', syncViewport);
+      }
+
       const onKeyDown = (e) => {
         if (e.key === 'Escape') {
           e.preventDefault();
@@ -255,6 +284,14 @@ export default function ChatOverlay({ openSignal, onCloseNotify }) {
 
       return () => {
         document.removeEventListener('keydown', onKeyDown);
+        if (vv) {
+          vv.removeEventListener('resize', syncViewport);
+          vv.removeEventListener('scroll', syncViewport);
+        }
+        if (overlayEl) {
+          overlayEl.style.height = '';
+          overlayEl.style.transform = '';
+        }
       };
     }
 
@@ -328,6 +365,7 @@ export default function ChatOverlay({ openSignal, onCloseNotify }) {
 
   return (
     <div
+      ref={overlayRef}
       className={`wk-chat-overlay ${isWelcome ? 'is-dark' : 'is-light'} ${state.isOpen ? 'is-open' : ''}`}
       role="dialog"
       aria-modal="true"
