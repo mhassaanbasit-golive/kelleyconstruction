@@ -1,0 +1,6 @@
+{
+  "name": "WK Construction Inc.",
+  "description": "Family-owned construction company in Cleveland, TX building metal buildings, clearing and grading land, pouring concrete slabs, and building custom homes and commercial build-outs.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
