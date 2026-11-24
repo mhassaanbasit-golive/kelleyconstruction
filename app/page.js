@@ -168,8 +168,8 @@ export default function HomePage() {
       />
 
       <section className="hero hero-home" data-hero="" aria-labelledby="home-hero-h1">
-        <div className="hero-media" data-parallax="">
-          <CloudImg imgKey="hero" eager sizes="100vw" defaultWidth={1440} />
+        <div className="hero-media frame" data-parallax="">
+          <CloudImg imgKey="hero" eager layered sizes="100vw" defaultWidth={1440} />
         </div>
         <div className="hero-overlay" aria-hidden="true" />
 
@@ -209,25 +209,19 @@ export default function HomePage() {
       <section className="section section-dark-navy chamfer-top text-fill-section" aria-labelledby="statement-h2">
         <div className="container">
           <h2 id="statement-h2" className="text-fill-heading" data-text-fill="">
-            <span className="text-fill-word">We </span>
-            <span className="text-fill-word">clear </span>
-            <span className="text-fill-word">the </span>
-            <span className="text-fill-word" data-accent="">
-              land.{' '}
-            </span>
-            <span className="text-fill-word">We </span>
-            <span className="text-fill-word">pour </span>
-            <span className="text-fill-word">the </span>
-            <span className="text-fill-word" data-accent="">
-              slab.{' '}
-            </span>
-            <span className="text-fill-word">We </span>
-            <span className="text-fill-word">put </span>
-            <span className="text-fill-word">up </span>
-            <span className="text-fill-word">the </span>
-            <span className="text-fill-word" data-accent="">
-              steel.
-            </span>
+            <span className="text-fill-word" data-word="We">We</span>{' '}
+            <span className="text-fill-word" data-word="clear">clear</span>{' '}
+            <span className="text-fill-word" data-word="the">the</span>{' '}
+            <span className="text-fill-word" data-accent="" data-word="land.">land.</span>{' '}
+            <span className="text-fill-word" data-word="We">We</span>{' '}
+            <span className="text-fill-word" data-word="pour">pour</span>{' '}
+            <span className="text-fill-word" data-word="the">the</span>{' '}
+            <span className="text-fill-word" data-accent="" data-word="slab.">slab.</span>{' '}
+            <span className="text-fill-word" data-word="We">We</span>{' '}
+            <span className="text-fill-word" data-word="put">put</span>{' '}
+            <span className="text-fill-word" data-word="up">up</span>{' '}
+            <span className="text-fill-word" data-word="the">the</span>{' '}
+            <span className="text-fill-word" data-accent="" data-word="steel.">steel.</span>
           </h2>
 
           <p
@@ -261,9 +255,10 @@ export default function HomePage() {
                 href={card.href}
                 className={`service-card${card.wide ? ' is-wide' : ''}`}
               >
-                <div className="service-card-media">
+                <div className="service-card-media frame">
                   <CloudImg
                     imgKey={card.key}
+                    layered
                     sizes={card.wide ? '(max-width: 899px) 100vw, 50vw' : '(max-width: 899px) 100vw, 33vw'}
                     defaultWidth={960}
                   />
@@ -308,7 +303,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      <section className="section section-dark-ink" aria-labelledby="trust-h2" style={{ overflow: 'hidden' }}>
+      <section className="section section-dark-steel" aria-labelledby="trust-h2" style={{ overflow: 'hidden' }}>
         <CloudImg imgKey="steel" decorative sizes="100vw" defaultWidth={1440} className="texture-bg" />
         <div className="container" style={{ position: 'relative', zIndex: 2 }}>
           <h2 id="trust-h2" data-split="">
@@ -365,9 +360,10 @@ export default function HomePage() {
                 className={`project-row${item.offset ? ' is-offset' : ''}`}
                 data-reveal=""
               >
-                <div className="project-row-img" data-image-reveal="" data-parallax="">
+                <div className="project-row-img frame" data-image-reveal="" data-parallax="">
                   <CloudImg
                     imgKey={item.key}
+                    layered
                     sizes="(max-width: 899px) 100vw, 280px"
                     defaultWidth={960}
                   />
@@ -405,9 +401,10 @@ export default function HomePage() {
               const isEven = idx % 2 === 1;
               return (
                 <div key={step.title} className={`process-step${isEven ? ' is-even' : ''}`} data-reveal="">
-                  <div className="process-step-media" data-image-reveal="" data-parallax="">
+                  <div className="process-step-media frame" data-image-reveal="" data-parallax="">
                     <CloudImg
                       imgKey={step.key}
+                      layered
                       sizes="(max-width: 899px) 100vw, 50vw"
                       defaultWidth={960}
                     />
@@ -447,13 +444,13 @@ export default function HomePage() {
         </div>
       </section>
 
-      <section className="section section-light-white" aria-labelledby="quote-h2">
+      <section className="section section-light-mist" aria-labelledby="quote-h2">
         <div className="container">
           <div className="quote-block">
-            <h2 id="quote-h2" data-split="">
+            <blockquote id="quote-h2" className="quote-text" data-split="">
               &ldquo;I can honestly say that we have not had any failures in the construction of our home and that is
               saying a lot for a log home!&rdquo;
-            </h2>
+            </blockquote>
             <p data-reveal="" style={{ marginTop: '20px', marginBottom: 0, fontWeight: 700, color: 'var(--slate)' }}>
               Ann B., BBB customer review
             </p>
@@ -461,7 +458,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      <section className="section section-light-mist" aria-labelledby="area-h2">
+      <section className="section section-light-white" aria-labelledby="area-h2">
         <div className="container">
           <div className="sticky-split" style={{ alignItems: 'center' }}>
             <div>
@@ -479,7 +476,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      <FaqSection id="home-faq" faqs={HOME_FAQS} surface="white" />
+      <FaqSection id="home-faq" faqs={HOME_FAQS} surface="mist" />
 
       <CtaBand />
     </>

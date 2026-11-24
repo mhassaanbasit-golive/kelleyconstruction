@@ -4,9 +4,15 @@ import { BUSINESS } from '../lib/site-data.js';
 export default function CtaBand({
   heading = 'Have a job in mind?',
   paragraph = `Call ${BUSINESS.phoneMain.display} or send us a note. We will get back to you.`,
+  surface = 'steel',
 }) {
+  const sectionClass =
+    surface === 'navy'
+      ? 'section section-dark-navy'
+      : 'section section-dark-steel';
+
   return (
-    <section className="section section-dark-ink" aria-labelledby="cta-band-heading">
+    <section className={sectionClass} aria-labelledby="cta-band-heading">
       <div className="container" style={{ textAlign: 'center' }}>
         <h2 id="cta-band-heading" data-split="">
           {heading}

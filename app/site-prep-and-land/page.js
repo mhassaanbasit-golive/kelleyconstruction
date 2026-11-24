@@ -100,10 +100,11 @@ export default function SitePrepAndLandPage() {
           </div>
         </div>
 
-        <div className="hero-split-media" data-parallax="">
+        <div className="hero-split-media frame" data-parallax="">
           <CloudImg
             imgKey="grading"
             eager
+            layered
             sizes="(max-width: 899px) 100vw, 50vw"
             defaultWidth={1440}
           />
@@ -153,11 +154,11 @@ export default function SitePrepAndLandPage() {
           </div>
 
           <div className="ba-slider" data-reveal="">
-            <div className="ba-layer">
-              <CloudImg imgKey="before" sizes="(max-width: 899px) 100vw, 1100px" defaultWidth={1440} />
+            <div className="ba-layer frame">
+              <CloudImg imgKey="before" layered sizes="(max-width: 899px) 100vw, 1100px" defaultWidth={1440} />
             </div>
-            <div className="ba-layer ba-after">
-              <CloudImg imgKey="after" sizes="(max-width: 899px) 100vw, 1100px" defaultWidth={1440} />
+            <div className="ba-layer ba-after frame">
+              <CloudImg imgKey="after" layered sizes="(max-width: 899px) 100vw, 1100px" defaultWidth={1440} />
             </div>
             <span className="ba-tag ba-tag-after">After</span>
             <span className="ba-tag ba-tag-before">Before</span>
@@ -178,8 +179,8 @@ export default function SitePrepAndLandPage() {
       </section>
 
       <section className="slab-fullbleed" aria-labelledby="slab-h2">
-        <div className="hero-media" data-parallax="">
-          <CloudImg imgKey="slab" sizes="100vw" defaultWidth={1440} />
+        <div className="hero-media frame" data-parallax="">
+          <CloudImg imgKey="slab" layered sizes="100vw" defaultWidth={1440} />
         </div>
         <div className="container">
           <div className="slab-card">

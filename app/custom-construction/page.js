@@ -72,8 +72,8 @@ export default function CustomConstructionPage() {
       />
 
       <section className="hero hero-85" data-hero="" aria-labelledby="custom-hero-h1">
-        <div className="hero-media" data-parallax="">
-          <CloudImg imgKey="log-ext" eager sizes="100vw" defaultWidth={1440} />
+        <div className="hero-media frame" data-parallax="">
+          <CloudImg imgKey="log-ext" eager layered sizes="100vw" defaultWidth={1440} />
         </div>
         <div className="hero-overlay-bottom" aria-hidden="true" />
 
@@ -119,11 +119,11 @@ export default function CustomConstructionPage() {
             </div>
 
             <div className="overlap-frames">
-              <div className="overlap-frame-primary" data-image-reveal="" data-parallax="">
-                <CloudImg imgKey="log-ext" sizes="(max-width: 899px) 100vw, 45vw" defaultWidth={960} />
+              <div className="overlap-frame-primary frame" data-image-reveal="" data-parallax="">
+                <CloudImg imgKey="log-ext" layered sizes="(max-width: 899px) 100vw, 45vw" defaultWidth={960} />
               </div>
-              <div className="overlap-frame-secondary" data-image-reveal="">
-                <CloudImg imgKey="log-int" sizes="(max-width: 899px) 100vw, 30vw" defaultWidth={960} />
+              <div className="overlap-frame-secondary frame" data-image-reveal="">
+                <CloudImg imgKey="log-int" layered sizes="(max-width: 899px) 100vw, 30vw" defaultWidth={960} />
               </div>
             </div>
           </div>
@@ -133,10 +133,10 @@ export default function CustomConstructionPage() {
       <section className="section section-light-mist" aria-labelledby="custom-quote-h2">
         <div className="container">
           <div style={{ maxWidth: '820px', marginInline: 'auto', textAlign: 'center' }}>
-            <h2 id="custom-quote-h2" data-split="">
+            <blockquote id="custom-quote-h2" className="quote-text" data-split="">
               &ldquo;I can honestly say that we have not had any failures in the construction of our home and that is
               saying a lot for a log home!&rdquo;
-            </h2>
+            </blockquote>
             <p data-reveal="" style={{ marginTop: '20px', marginBottom: 0, fontWeight: 700, color: 'var(--slate)' }}>
               Ann B., BBB customer review
             </p>
@@ -146,8 +146,8 @@ export default function CustomConstructionPage() {
 
       <section id="commercial" className="section section-dark-navy" style={{ paddingBlock: 0 }} aria-labelledby="commercial-h2">
         <div className="bleed-split">
-          <div className="bleed-split-media" data-image-reveal="" data-parallax="">
-            <CloudImg imgKey="buildout" sizes="(max-width: 899px) 100vw, 50vw" defaultWidth={1440} />
+          <div className="bleed-split-media frame" data-image-reveal="" data-parallax="">
+            <CloudImg imgKey="buildout" layered sizes="(max-width: 899px) 100vw, 50vw" defaultWidth={1440} />
           </div>
 
           <div className="bleed-split-body">
@@ -198,7 +198,7 @@ export default function CustomConstructionPage() {
         </div>
       </section>
 
-      <section className="section section-dark-ink" aria-labelledby="count-on-h2">
+      <section className="section section-dark-steel" aria-labelledby="count-on-h2">
         <div className="container">
           <h2 id="count-on-h2" data-split="">
             What you can count on

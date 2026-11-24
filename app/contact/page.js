@@ -38,8 +38,8 @@ export default function ContactPage() {
       />
 
       <section className="hero hero-60" data-hero="" aria-labelledby="contact-hero-h1">
-        <div className="hero-media" data-parallax="">
-          <CloudImg imgKey="contact" eager decorative sizes="100vw" defaultWidth={1440} />
+        <div className="hero-media frame" data-parallax="">
+          <CloudImg imgKey="contact" eager decorative layered sizes="100vw" defaultWidth={1440} />
         </div>
         <div className="hero-overlay" aria-hidden="true" />
 
@@ -195,7 +195,7 @@ export default function ContactPage() {
         </div>
       </section>
 
-      <section className="section section-light-white" style={{ paddingTop: 0, position: 'relative' }} aria-labelledby="find-us-h2">
+      <section className="section section-light-mist" style={{ position: 'relative' }} aria-labelledby="find-us-h2">
         <div className="container">
           <h2 id="find-us-h2" data-split="">
             Find us

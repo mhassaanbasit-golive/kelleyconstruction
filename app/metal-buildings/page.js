@@ -107,8 +107,8 @@ export default function MetalBuildingsPage() {
       />
 
       <section className="hero hero-80" data-hero="" aria-labelledby="metal-hero-h1">
-        <div className="hero-media" data-parallax="">
-          <CloudImg imgKey="metal-ext" eager sizes="100vw" defaultWidth={1440} />
+        <div className="hero-media frame" data-parallax="">
+          <CloudImg imgKey="metal-ext" eager layered sizes="100vw" defaultWidth={1440} />
         </div>
         <div className="hero-overlay" aria-hidden="true" />
 
@@ -158,9 +158,10 @@ export default function MetalBuildingsPage() {
                 <article key={block.title} id={block.id} className="split-block" data-reveal="">
                   <h3>{block.title}</h3>
                   <p style={{ marginTop: '10px', marginBottom: 0, color: 'var(--slate)' }}>{block.text}</p>
-                  <div className="split-block-img" data-image-reveal="" data-parallax="">
+                  <div className="split-block-img frame" data-image-reveal="" data-parallax="">
                     <CloudImg
                       imgKey={block.key}
+                      layered
                       sizes="(max-width: 899px) 100vw, 55vw"
                       defaultWidth={960}
                     />
@@ -172,7 +173,7 @@ export default function MetalBuildingsPage() {
         </div>
       </section>
 
-      <section className="section section-dark-ink hscroll-section" aria-labelledby="inside-out-h2">
+      <section className="section section-dark-navy hscroll-section" aria-labelledby="inside-out-h2">
         <div className="container">
           <h2 id="inside-out-h2" data-split="">
             Inside and out
@@ -181,9 +182,10 @@ export default function MetalBuildingsPage() {
           <div className="hscroll-track">
             {GALLERY_PANELS.map((panel) => (
               <figure key={panel.key} className="hscroll-panel" style={{ margin: 0 }}>
-                <div className="hscroll-panel-img">
+                <div className="hscroll-panel-img frame" data-image-reveal="">
                   <CloudImg
                     imgKey={panel.key}
+                    layered
                     sizes="(max-width: 899px) 84vw, 820px"
                     defaultWidth={1440}
                   />
@@ -221,7 +223,7 @@ export default function MetalBuildingsPage() {
                     style={{
                       width: '28px',
                       height: '28px',
-                      borderRadius: '4px',
+                      borderRadius: '0',
                       border: '1px solid var(--gold)',
                       display: 'inline-flex',
                       alignItems: 'center',

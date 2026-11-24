@@ -9,9 +9,11 @@ import {
   ShieldCheck,
   X,
 } from 'lucide-react';
+import 'lenis/dist/lenis.css';
 import './globals.css';
 import { BUSINESS, getImageProps } from '../lib/site-data.js';
 import Motion from '../components/Motion.js';
+import ChatWidget from '../components/chat/ChatWidget.js';
 
 const anton = Anton({
   weight: '400',
@@ -396,6 +398,15 @@ export default function RootLayout({ children }) {
 
             <div className="footer-bottom">
               <span>&copy; 2026 {BUSINESS.legalName} All rights reserved.</span>
+              {/* EDIT: correct link */}
+              <a
+                href="https://getgolive.com"
+                target="_blank"
+                rel="noopener"
+                className="footer-credit-link"
+              >
+                Website by GetGoLive
+              </a>
               <a href="/privacy/" className="inline-link">
                 Privacy
               </a>
@@ -515,6 +526,7 @@ export default function RootLayout({ children }) {
         </div>
 
         <Motion />
+        <ChatWidget />
       </body>
     </html>
   );

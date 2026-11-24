@@ -9,7 +9,7 @@ export const metadata = {
 export default function NotFoundPage() {
   return (
     <section
-      className="section section-dark-ink"
+      className="section section-dark-steel"
       style={{ minHeight: '78svh', display: 'flex', alignItems: 'center', paddingTop: '140px' }}
       aria-labelledby="not-found-h1"
     >

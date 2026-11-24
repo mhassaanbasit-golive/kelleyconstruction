@@ -9,11 +9,12 @@ export default function CloudImg({
   altOverride,
   className,
   style,
+  layered = false,
 }) {
   const props = getImageProps(imgKey, { eager, sizes, defaultWidth, decorative });
   const altText = decorative ? '' : altOverride !== undefined ? altOverride : props.alt;
 
-  return (
+  const imgEl = (
     <img
       src={props.src}
       srcSet={props.srcSet}
@@ -28,5 +29,13 @@ export default function CloudImg({
       className={className}
       style={style}
     />
+  );
+
+  if (!layered) return imgEl;
+
+  return (
+    <span className="par">
+      <span className="rev">{imgEl}</span>
+    </span>
   );
 }

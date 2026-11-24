@@ -34,10 +34,11 @@ export default function ProjectsPage() {
       />
 
       <section className="hero hero-50" data-hero="" aria-labelledby="projects-hero-h1">
-        <div className="hero-media" data-parallax="">
+        <div className="hero-media frame" data-parallax="">
           <CloudImg
             imgKey="steel"
             eager
+            layered
             sizes="100vw"
             defaultWidth={1440}
             altOverride="Steel framing and panels"
@@ -86,11 +87,14 @@ export default function ProjectsPage() {
                     data-full-img={fullImg}
                     data-img-alt={IMAGES[item.imageKey].alt}
                   >
-                    <CloudImg
-                      imgKey={item.imageKey}
-                      sizes="(max-width: 639px) 100vw, (max-width: 1023px) 50vw, 33vw"
-                      defaultWidth={960}
-                    />
+                    <span className="project-card-media frame">
+                      <CloudImg
+                        imgKey={item.imageKey}
+                        layered
+                        sizes="(max-width: 639px) 100vw, (max-width: 1023px) 50vw, 33vw"
+                        defaultWidth={960}
+                      />
+                    </span>
                     <span className="project-card-overlay" aria-hidden="true" />
                     <span className="project-card-chip">{item.category}</span>
                     <span className="project-card-content">

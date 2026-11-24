@@ -38,8 +38,8 @@ export default function AboutPage() {
       />
 
       <section className="hero hero-70" data-hero="" aria-labelledby="about-hero-h1">
-        <div className="hero-media" data-parallax="">
-          <CloudImg imgKey="about" eager sizes="100vw" defaultWidth={1440} />
+        <div className="hero-media frame" data-parallax="">
+          <CloudImg imgKey="about" eager layered sizes="100vw" defaultWidth={1440} />
         </div>
         <div className="hero-overlay" aria-hidden="true" />
 
@@ -58,31 +58,26 @@ export default function AboutPage() {
       <section className="section section-dark-navy chamfer-top text-fill-section" aria-labelledby="about-fill-h2">
         <div className="container">
           <h2 id="about-fill-h2" className="text-fill-heading" data-text-fill="">
-            <span className="text-fill-word">We </span>
-            <span className="text-fill-word">are </span>
-            <span className="text-fill-word">a </span>
-            <span className="text-fill-word" data-accent="">
-              family{' '}
-            </span>
-            <span className="text-fill-word">business. </span>
-            <span className="text-fill-word">We </span>
-            <span className="text-fill-word">have </span>
-            <span className="text-fill-word">built </span>
-            <span className="text-fill-word">around </span>
-            <span className="text-fill-word">Cleveland </span>
-            <span className="text-fill-word">for </span>
-            <span className="text-fill-word">over </span>
-            <span className="text-fill-word" data-accent="">
-              45 years.{' '}
-            </span>
-            <span className="text-fill-word">Our </span>
-            <span className="text-fill-word" data-accent="">
-              name{' '}
-            </span>
-            <span className="text-fill-word">is </span>
-            <span className="text-fill-word">on </span>
-            <span className="text-fill-word">every </span>
-            <span className="text-fill-word">job.</span>
+            <span className="text-fill-word" data-word="We">We</span>{' '}
+            <span className="text-fill-word" data-word="are">are</span>{' '}
+            <span className="text-fill-word" data-word="a">a</span>{' '}
+            <span className="text-fill-word" data-accent="" data-word="family">family</span>{' '}
+            <span className="text-fill-word" data-word="business.">business.</span>{' '}
+            <span className="text-fill-word" data-word="We">We</span>{' '}
+            <span className="text-fill-word" data-word="have">have</span>{' '}
+            <span className="text-fill-word" data-word="built">built</span>{' '}
+            <span className="text-fill-word" data-word="around">around</span>{' '}
+            <span className="text-fill-word" data-word="Cleveland">Cleveland</span>{' '}
+            <span className="text-fill-word" data-word="for">for</span>{' '}
+            <span className="text-fill-word" data-word="over">over</span>{' '}
+            <span className="text-fill-word" data-accent="" data-word="45">45</span>{' '}
+            <span className="text-fill-word" data-accent="" data-word="years.">years.</span>{' '}
+            <span className="text-fill-word" data-word="Our">Our</span>{' '}
+            <span className="text-fill-word" data-accent="" data-word="name">name</span>{' '}
+            <span className="text-fill-word" data-word="is">is</span>{' '}
+            <span className="text-fill-word" data-word="on">on</span>{' '}
+            <span className="text-fill-word" data-word="every">every</span>{' '}
+            <span className="text-fill-word" data-word="job.">job.</span>
           </h2>
         </div>
       </section>
@@ -140,7 +135,7 @@ export default function AboutPage() {
         </div>
       </section>
 
-      <section className="section section-dark-ink" aria-labelledby="stand-behind-h2" style={{ overflow: 'hidden' }}>
+      <section className="section section-dark-steel" aria-labelledby="stand-behind-h2" style={{ overflow: 'hidden' }}>
         <CloudImg imgKey="steel" decorative sizes="100vw" defaultWidth={1440} className="texture-bg" />
         <div className="container" style={{ position: 'relative', zIndex: 2 }}>
           <h2 id="stand-behind-h2" data-split="">
